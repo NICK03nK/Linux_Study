@@ -1,2 +1,3 @@
-This file is only used to test git pull operations on Linux
+This file is only used to test git pull and delete operations on Linux
 Modify the file on GitHub
+The modified file is successfully pulled from GitHub to the local directory.
