@@ -43,7 +43,6 @@ int main()
 
     // 分割用户输入的指令，存入myargv中
     myargv[0] = strtok(lineCommand, " ");
-
     // 当lineCommand中没有" "时，strtok()返回NULL，而myargv最后要以NULL结尾，所以一下实现方式可完美契合
     int i = 1;
     while(myargv[i++] = strtok(NULL, " "));
