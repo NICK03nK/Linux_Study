@@ -3,20 +3,128 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <errno.h>
 
 #define NUM 1024
 #define OPT_NUM 64
+
+#define NONE_REDIR 0
+#define INPUT_REDIR 1
+#define OUTPUT_REDIR 2
+#define APPEND_REDIR 3
+
+#define trimSpace(start) do{\
+  while (isspace(*start)) ++start;\
+}while(0)
 
 char lineCommand[NUM];
 char* myargv[OPT_NUM];
 int lastCode = 0;
 
+int redirType = NONE_REDIR;
+char* redirFile = NULL;
+
+void commandCheak(char* commands)
+{
+  assert(commands);
+
+  char* start = commands;
+  char* end = commands + strlen(commands);
+  
+  while(start < end)
+  {
+    if (*start == '>')
+    {
+      *start = '\0';
+      ++start;
+      
+      // 判断是输出重定向还是追加重定向
+      if (*start == '>')
+      {
+        redirType = APPEND_REDIR;
+        ++start;
+      }
+      else
+      {
+        redirType = OUTPUT_REDIR;
+      }
+
+      trimSpace(start);
+      redirFile = start;
+
+      break;
+    }
+    else if (*start == '<')
+    {
+      *start = '\0';
+      ++start;
+      trimSpace(start);
+
+      // 填写重定向的信息
+      redirType = INPUT_REDIR;
+      redirFile = start;
+
+      break;
+    }
+    else
+    {
+      ++start;
+    }
+  }
+
+}
+
+void inputRedirFunc()
+{
+  int fd = open(redirFile, O_RDONLY);
+  if (fd < 0)
+  {
+    perror("open");
+    exit(errno);
+  }
+  
+  // 重定向的文件已成功打开
+  dup2(fd, 0);
+}
+
+void output_appendRedirFunc()
+{
+  umask(0);
+  int flags = O_WRONLY | O_CREAT;
+  if (redirType == APPEND_REDIR)
+  {
+    flags |= O_APPEND;
+  }
+  else
+  {
+    flags |= O_TRUNC;
+  }
+
+  int fd = open(redirFile, flags, 0666);
+  if (fd < 0)
+  {
+    perror("open");
+    exit(errno);
+  }
+
+  // 重定向的文件已成功打开
+  dup2(fd, 1);
+}
+
 int main()
 {
   while(1)
   {
+    // 初始化重定向的两个变量
+    redirType = NONE_REDIR;
+    redirFile = NULL;
+    errno = 0;
+
     // 若在提示符中直接输出PWD，显示效果与shell的命令行提示符不相符
     // 所以这里的处理是为了拿到PWD的最后一个/后的路径
     char* myPWD = NULL;
@@ -41,7 +149,13 @@ int main()
     (void)s;
     // 清除输入指令时从键盘输入的\n   abcd\n   len = 5
     lineCommand[strlen(lineCommand) - 1] = '\0';
-
+  
+    // 重定向操作的实现：
+    // "ls -a -l > myfile.txt" --> "ls -a -l" > "myfile.txt"
+    // "ls -a -l >> myfile.txt" --> "ls -a -l" >> "myfile.txt"
+    // "cat < myfile.txt" --> "cat" < "myfile.txt"
+    commandCheak(lineCommand);
+   
     // 分割用户输入的指令，存入myargv中
     myargv[0] = strtok(lineCommand, " ");
     int i = 1;
@@ -91,6 +205,25 @@ int main()
     {
       // 子进程
       // 执行命令
+      // 由子进程来执行重定向的操作
+      
+      switch(redirType)
+      {
+        case NONE_REDIR:
+          // 无重定向，无需执行重定向操作
+          break;
+        case INPUT_REDIR:
+          inputRedirFunc();
+          break;
+        case OUTPUT_REDIR:
+        case APPEND_REDIR:
+          output_appendRedirFunc();
+          break;
+        default:
+          printf("BUGS!\n");
+          break;
+      }
+      
       execvp(myargv[0], myargv);
       exit(1);
     }
@@ -107,3 +240,4 @@ int main()
 
   return 0;
 }
+

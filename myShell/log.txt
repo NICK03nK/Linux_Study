@@ -1,0 +1,15 @@
+total 28
+-rw-rw-rw- 1 Linux_nK Linux_nK     0 Dec  1 13:38 log.txt
+-rw-rw-r-- 1 Linux_nK Linux_nK    77 Nov 20 21:45 Makefile
+-rwxrwxr-x 1 Linux_nK Linux_nK 13984 Dec  1 13:37 myshell
+-rw-rw-r-- 1 Linux_nK Linux_nK  5021 Dec  1 13:37 myshell.c
+total 32
+-rw-rw-rw- 1 Linux_nK Linux_nK   244 Dec  1 13:38 log.txt
+-rw-rw-r-- 1 Linux_nK Linux_nK    77 Nov 20 21:45 Makefile
+-rwxrwxr-x 1 Linux_nK Linux_nK 13984 Dec  1 13:37 myshell
+-rw-rw-r-- 1 Linux_nK Linux_nK  5021 Dec  1 13:37 myshell.c
+total 32
+-rw-rw-rw- 1 Linux_nK Linux_nK   488 Dec  1 13:38 log.txt
+-rw-rw-r-- 1 Linux_nK Linux_nK    77 Nov 20 21:45 Makefile
+-rwxrwxr-x 1 Linux_nK Linux_nK 13984 Dec  1 13:37 myshell
+-rw-rw-r-- 1 Linux_nK Linux_nK  5021 Dec  1 13:37 myshell.c
