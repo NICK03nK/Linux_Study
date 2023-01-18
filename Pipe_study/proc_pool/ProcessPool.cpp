@@ -6,6 +6,8 @@
 #include <string>
 #include <cstdio>
 #include <ctime>
+#include <sys/types.h>
+#include <sys/wait.h>
 using namespace std;
 
 #define PROCESS_NUM 5
@@ -56,9 +58,14 @@ int receiveTask(int readFd)
 {
     int code = 0;
     ssize_t n = read(readFd, &code, sizeof(code));
-    assert(n == sizeof(code));
-
-    return code;
+    if (n == 4)  // 获取任务码成功
+    {
+        return code;
+    }
+    else if (n <= 0)  // 获取任务码失败
+    {
+        return -1;
+    }
 }
 
 void createSubProcess(vector<subEP>& subs, const vector<func_t>& funcMap)  // 创建PROCESS_NUM个子进程，并push到vector中
@@ -88,9 +95,9 @@ void createSubProcess(vector<subEP>& subs, const vector<func_t>& funcMap)  // �
                 {
                     funcMap[taskCode]();
                 }
-                else
+                else if (taskCode == -1)  // 获取任务码失败
                 {
-                    cout << "subprocess receive task error" << endl;
+                    break;  // 退出子进程
                 }
             }
 
@@ -150,7 +157,21 @@ void loadBalanceControl(const vector<subEP>& subs, const vector<func_t>& funcMap
     }
 
     // 关闭写端后，读端读到0后就自动退出读端
-    
+    for (int i = 0; i < subs.size(); ++i)
+    {
+        close(subs[i]._writeFd);
+    }
+}
+
+void waitprocess(const vector<subEP>& processes)
+{
+    int processNum = processes.size();
+
+    for (int i = 0; i < processNum; ++i)
+    {
+        waitpid(processes[i]._subId, nullptr, 0);
+        cout << "wait subprocess success : " << processes[i]._subId << endl;
+    }
 }
 
 // 父进程控制子进程，子进程执行特定任务
@@ -166,6 +187,9 @@ int main()
     // 2. 父进程控制子进程
     int taskCnt = 3;  // 父进程发放任务的次数，若为0则永远发放任务
     loadBalanceControl(subs, funcMap, taskCnt);
+
+    // 3. 回收子进程
+    waitprocess(subs);
 
     return 0;
 }

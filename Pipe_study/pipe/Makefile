@@ -1,5 +1,5 @@
 mypipe:mypipe.cpp
-	g++ -o $@ $^
+	g++ -o $@ $^ -std=c++11
 
 .PHONY:clean
 clean:
