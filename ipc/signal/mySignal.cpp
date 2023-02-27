@@ -9,19 +9,48 @@ using namespace std;
 
 int main()
 {
-    int cnt = 0;
-    while (cnt < 10)
-    {
-        if (cnt == 5)
-        {
-            //raise(9);
-            abort();  // 给当前进程发送6号信号
-        }
+    int arr[10] = { 0 };
+    arr[10000] = 10;
 
-        cout << cnt++ << endl;
-        sleep(1);
-    }
+    return 0;
 }
+
+// int cnt = 0;
+
+// void handler(int signo)
+// {
+//     cout << cnt << endl;
+//     exit(1);
+// }
+
+// int main()
+// {
+//     signal(SIGALRM, handler);
+//     alarm(1);
+
+//     while (true)
+//     {
+//         cnt++;
+//     }
+
+//     return 0;
+// }
+
+// int main()
+// {
+//     int cnt = 0;
+//     while (cnt < 10)
+//     {
+//         if (cnt == 5)
+//         {
+//             //raise(9);
+//             abort();  // 给当前进程发送6号信号
+//         }
+
+//         cout << cnt++ << endl;
+//         sleep(1);
+//     }
+// }
 
 // // myKill的使用手册
 // void Usage(const string& proc)
