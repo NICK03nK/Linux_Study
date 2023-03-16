@@ -1,20 +1,16 @@
 #include <iostream>
 #include <signal.h>
 #include <unistd.h>
-#include <vector>
 using namespace std;
 
-// #define BLOCK_SIGNAL 2
+#define BLOCK_SIG 2
 #define MAX_SIGNUM 31
 
-// static vector<int> sigarr = { 2, 3 };  // 要屏蔽的信号
-static vector<int> sigarr = { 2 };  // 要屏蔽的信号
-
-static void show_pending(const sigset_t& pending)
+void show_pending(const sigset_t& pending)
 {
-    for (int signo = MAX_SIGNUM; signo >= 1; signo--)
+    for (int i = MAX_SIGNUM; i >= 1; --i)
     {
-        if (sigismember(&pending, signo))
+        if (sigismember(&pending, i))
         {
             cout << "1";
         }
@@ -26,73 +22,86 @@ static void show_pending(const sigset_t& pending)
     cout << endl;
 }
 
-static sigset_t block, oblock, pending;  // sigset_t是信号集类型，定义的变量都是一个信号集
+sigset_t block, oblock, pending;
 
 void myHandler(int signo)
 {
-    cout << "特定信号已递达" << endl;
+    cout << "BLOCK_SIG已递达" << endl;
 
-    cout << "sleep-5" << endl;
-    sleep(5);
+    // 在myHandler中阻塞3号信号
+    cout << "在myHandler中阻塞3号信号" << endl;
 
-    // BUG
-    // cout << "再次屏蔽特殊信号" << endl;
-    // sigprocmask(SIG_SETMASK, &block, &oblock);
+    // 将3号信号填入block中
+    sigaddset(&block, 3);
+
+    // 将添加了3号信号的block设置进当前进程的信号屏蔽字中
+    sigprocmask(SIG_SETMASK, &block, &oblock);
+
+    int cnt = 5;
+    while (cnt--)
+    {
+        sleep(1);
+
+        sigemptyset(&pending);
+
+        // 获取当前进程的未决信号集并填入创建的pending信号集变量中
+        sigpending(&pending);
+        
+        // 打印pending信号集
+        cout << "pendng >> ";
+        show_pending(pending);
+    }
 }
 
 int main()
 {
-    for (const auto& e : sigarr)
-    {
-        signal(e, myHandler);
-    }
+    signal(BLOCK_SIG, myHandler);
 
-    // 1.尝试屏蔽特定的信号    
-    // 1.1.初始化信号集
+    // 初始化block，oblock信号集
     sigemptyset(&block);
     sigemptyset(&oblock);
     sigemptyset(&pending);
 
-    // 1.2.添加要屏蔽的信号
-    for (const auto& e : sigarr)
-    {
-        sigaddset(&block, e);
-    }
+    // 将要阻塞的信号填入block中
+    sigaddset(&block, BLOCK_SIG);
 
-    // 1.3.屏蔽信号
-    sigprocmask(SIG_SETMASK, &block, &oblock);  // 修改当前进程的信号屏蔽字(block表)
+    // 将block设置进当前进程的信号屏蔽字中
+    sigprocmask(SIG_SETMASK, &block, &oblock);
+    cout << "阻塞BLOCK_NUM" << endl;
 
-    // 2.遍历打印pending信号集
     int cnt = 5;
     while (true)
     {
-        // 2.1.初始化
+        // 初始化pending信号集
         sigemptyset(&pending);
 
-        // 2.2.获取pending信号集
-        sigpending(&pending);  // 覆盖式获取当前进程的未决信号集，放入到pending变量中
-
-        // 2.3.打印信号集
-        cout << cnt << endl;
-        cout << "pending:";
+        // 获取当前进程的未决信号集并填入创建的pending信号集变量中
+        sigpending(&pending);
+        
+        // 打印pending信号集
+        cout << cnt-- << endl;
+        cout << "pendng >> ";
         show_pending(pending);
-
         sleep(1);
 
-        // 3.取消对特定信号的阻塞
-        if (cnt-- == 0)
+        // 倒数5s后解除对BLOCK_SIG的阻塞
+        if (cnt == 0)
         {
-            cout << "取消对特定信号的屏蔽" << endl;
-
-            sigprocmask(SIG_SETMASK, &oblock, &block);  // 取消特定信号的阻塞状态
-
-            // 将再次屏蔽特殊信号的代码放在此处可以正常工作
-            cout << "再次屏蔽特殊信号" << endl;
-            sigprocmask(SIG_SETMASK, &block, &oblock);
-
-            cnt = 5;
+            cout << "解除对BLOCK_SIG的阻塞" << endl;
+            sigprocmask(SIG_SETMASK, &oblock, &block);  // 解除对BLOCK_SIG的阻塞
         }
     }
 
     return 0;
 }
+
+// 程序解释：
+// 先阻塞BLOCK_SIG，在5s内在终端窗口中ctrl+c发送2号信号，2号信号
+// 被保存在pending中，5s后解除对BLOCK_SIG的阻塞，BLOCK_SIG被递
+// 达，进入到myHandler方法中，正在处理BLOCK_SIG时，OS默认阻塞
+// BLOCK_SIG，此时再次ctrl+c会看到pending中的第2个比特位由0置1
+// 在myHandler方法中阻塞3号信号，在命令行中ctrl+\给进程发送3号
+// 信号，发现pending中的第3个比特位由0置1，5s过后执行完myHandler
+// 方法，OS会取消先前阻塞的2号信号和3号信号的阻塞状态，若检测到
+// pending中有3号信号，则程序会直接Quit；若pending中只有2号信号
+// ，则会再次执行myHandler。
