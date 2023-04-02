@@ -23,10 +23,10 @@ void* consume(void* arg)
         
         // 生产活动
         // 2. 向保存任务的阻塞队列中发送保存任务
-        SaveTask st(result, saveResult);
-        s_bq->push(st);
+        // SaveTask st(result, saveResult);
+        // s_bq->push(st);
 
-        cout << "c_thread >> 推送保存任务..." << endl;
+        // cout << "c_thread >> 推送保存任务..." << endl;
     }
 
     return nullptr;
@@ -87,15 +87,29 @@ int main()
 
     // p是纯生产者线程，s是纯消费者线程
     // c既是消费者线程，也是生产者线程
-    pthread_t c, p, s;
-    pthread_create(&c, nullptr, consume, &bqs);
-    pthread_create(&p, nullptr, produce, &bqs);
-    pthread_create(&s, nullptr, save, &bqs);
+    // pthread_t c, p, s;
+    // pthread_create(&c, nullptr, consume, &bqs);
+    // pthread_create(&p, nullptr, produce, &bqs);
+    // pthread_create(&s, nullptr, save, &bqs);
 
-    // 回收三个线程
-    pthread_join(c, nullptr);
-    pthread_join(p, nullptr);
-    pthread_join(s, nullptr);
+    // // 回收三个线程
+    // pthread_join(c, nullptr);
+    // pthread_join(p, nullptr);
+    // pthread_join(s, nullptr);
+
+    // 多个生产者线程，多个消费者线程
+    pthread_t c[2], p[3];
+    pthread_create(c, nullptr, consume, &bqs);
+    pthread_create(c + 1, nullptr, consume, &bqs);
+    pthread_create(p, nullptr, produce, &bqs);
+    pthread_create(p + 1, nullptr, produce, &bqs);
+    pthread_create(p + 2, nullptr, produce, &bqs);
+
+    pthread_join(c[0], nullptr);
+    pthread_join(c[1], nullptr);
+    pthread_join(p[0], nullptr);
+    pthread_join(p[1], nullptr);
+    pthread_join(p[2], nullptr);
 
     // 释放两个阻塞队列
     delete bqs.c_bq;
