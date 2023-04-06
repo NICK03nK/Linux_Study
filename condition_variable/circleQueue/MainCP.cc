@@ -7,6 +7,14 @@
 #include <unistd.h>
 #include <string>
 
+string SelfName()
+{
+    char name[128] = { 0 };
+    snprintf(name, sizeof(name), "thread[0x%x]", pthread_self());
+
+    return name;
+}
+
 void* produce(void* arg)
 {
     CircleQueue<Task>* cq = static_cast<CircleQueue<Task>*>(arg);
@@ -21,7 +29,7 @@ void* produce(void* arg)
 
         // 生产任务
         cq->push(t);
-        cout << "生产者生产了一个任务 >> " << t.toTaskString() << endl;
+        cout << SelfName() << "生产者生产了一个任务 >> " << t.toTaskString() << endl;
     }
 }
 
@@ -35,7 +43,7 @@ void* consume(void* arg)
         Task t;
         cq->pop(&t);
         string result = t();
-        cout << "消费者消费了一个任务 >> " << result << endl;
+        cout << SelfName() << "消费者消费了一个任务 >> " << result << endl;
     }
 }
 
@@ -45,12 +53,25 @@ int main()
 
     CircleQueue<Task>* cq = new CircleQueue<Task>();
 
-    pthread_t producer, consumer;
-    pthread_create(&producer, nullptr, produce, cq);
-    pthread_create(&consumer, nullptr, consume, cq);
+    pthread_t producer[4], consumer[8];
 
-    pthread_join(producer, nullptr);
-    pthread_join(consumer, nullptr);
+    for (int i = 0; i < 4; ++i)
+    {
+        pthread_create(producer + i, nullptr, produce, cq);
+    }
+    for (int i = 0; i < 8; ++i)
+    {
+        pthread_create(consumer + i, nullptr, consume, cq);
+    }
+
+    for (int i = 0; i < 4; ++i)
+    {
+        pthread_join(producer[i], nullptr);
+    }
+    for (int i = 0; i < 8; ++i)
+    {
+        pthread_join(consumer[i], nullptr);
+    }
 
     delete cq;
 
