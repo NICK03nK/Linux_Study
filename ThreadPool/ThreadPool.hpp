@@ -126,7 +126,7 @@ private:
     {
         ThreadData<T>* td = static_cast<ThreadData<T>*>(arg);
 
-        while (true)
+        while (true)  // 此处使用while(true)的原因是，保持线程池中的线程，有任务就取任务并处理，没任务就在线程池中挂起等待
         {
             // td->_pThreadPool->lockQueue();
 
