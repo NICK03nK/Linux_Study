@@ -15,7 +15,7 @@ using namespace std;
 
 namespace Client
 {
-    enum {USE_ERROR = 1, SOCK_ERROR, BIND_ERROR};
+    enum {USE_ERROR = 1, SOCK_ERROR};
 
     class udpClient
     {
