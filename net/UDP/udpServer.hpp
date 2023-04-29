@@ -75,7 +75,7 @@ namespace Server
                 {
                     buffer[ret] = 0;
                     string client_ip = inet_ntoa(peer.sin_addr);
-                    uint16_t client_port = peer.sin_port;
+                    uint16_t client_port = ntohs(peer.sin_port);
                     string message = buffer;
 
                     _callBack(client_ip, client_port, message);
