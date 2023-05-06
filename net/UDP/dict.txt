@@ -1,0 +1,36 @@
+比特:bite
+你好:hello
+字符串:string
+香蕉:banana
+苹果:apple
+咖啡厅:Coffee shop
+健身房:Gym
+早餐餐厅:Breakfast restaurant
+天气预报:Weather forecast
+手机应用程序:Mobile application
+购物中心:Shopping center
+交通拥堵:Traffic congestion
+友谊:Friendship
+娱乐活动:Entertainment activities
+沟通技巧:Communication skills
+餐具:Tableware
+餐巾纸:Napkin
+洗衣机:Washing machine
+空调:Air conditioning
+衣柜:Wardrobe
+电梯:Elevator
+地铁:Subway
+垃圾桶:Garbage bin
+邮箱:Mailbox
+公园:Park
+电视机:Television
+厨房:Kitchen
+火车站:Train station
+超市:Supermarket
+公交车:Bus
+电影院:Cinema
+游泳池:Swimming pool
+停车场:Parking lot
+酒店:Hotel
+医院:Hospital
+橄榄球:football

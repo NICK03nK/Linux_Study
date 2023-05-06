@@ -19,11 +19,11 @@ namespace Server
     static const string defaultIP = "0.0.0.0";
     static const int num = 1024;
 
-    enum {USE_ERROR = 1, SOCK_ERROR, BIND_ERROR};
+    enum {USE_ERROR = 1, SOCK_ERROR, BIND_ERROR, OPEN_ERROR};
 
     class udpServer
     {
-        using func_t = function<void(string, uint16_t, string)>;
+        using func_t = function<void(int, string, uint16_t, string)>;
 
     public:
         udpServer(const func_t& callBack, const uint16_t port, const string& ip = defaultIP)  // 构造对象时ip不需要传递，使用缺省值即可
@@ -78,7 +78,9 @@ namespace Server
                     uint16_t client_port = ntohs(peer.sin_port);
                     string message = buffer;
 
-                    _callBack(client_ip, client_port, message);
+                    cout << client_ip << "[" << client_port << "]# " << message << endl;
+
+                    _callBack(_sockFd, client_ip, client_port, message);
                 }
             }
         }
@@ -90,6 +92,6 @@ namespace Server
         uint16_t _port;  // 该服务进程在服务器主机中对应的端口号
         string _ip;  // 服务器主机的ip
         int _sockFd;  // 用于接收socket()的返回值(即一个文件描述符)
-        func_t _callBack;
+        func_t _callBack;  // 服务器进程对应的业务逻辑
     };
 }

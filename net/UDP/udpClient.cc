@@ -6,7 +6,7 @@ using namespace Client;
 
 void Usage(string proc)
 {
-    cout << "\nUsage:\n\t" << proc << " link_ip link_port\n\n";
+    cerr << "\nUsage:\n\t" << proc << " link_ip link_port\n\n";
 }
 
 int main(int argc, char* argv[])
