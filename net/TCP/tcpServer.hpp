@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <strings.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 using namespace std;
 
@@ -79,8 +80,37 @@ namespace Server
                 logMessage(NORMAL, "accept a new link success");
 
                 // 5.未来在进行tcp网络编程通信时，都是对accept()的返回值sockFd进行文件操作
-                serviceIO(sockFd);
-                close(sockFd);  // 执行完serviceIO()后，一定要关闭对应的sockFd，不然会导致文件描述符泄漏
+
+                // --version 1
+                // serviceIO(sockFd);
+                // close(sockFd);  // 执行完serviceIO()后，一定要关闭对应的sockFd，不然会导致文件描述符泄漏
+                // --end of version 1
+
+                // --version 2 (多进程版本)
+                pid_t id = fork();  // 创建子进程
+
+                if (id == 0)  // 子进程
+                {
+                    close(_listenSockFd);  // 关闭用来监听的sockfd，避免对其误操作
+
+                    if (fork() > 0)  // 在子进程中再创建子进程
+                    {
+                        // 当前为子进程(非孙子进程)
+                        exit(0);  // 子进程退出了，孙子进程就会变成孤儿进程，由OS领养，当孙子进程退出时，由OS负责回收，即回收任务不需要父进程来关注
+                    }
+
+                    // 孙子进程
+                    serviceIO(sockFd);  // 由孙子进程来提供服务
+                    close(sockFd);
+                    exit(0);
+                }
+
+                // 父进程
+                pid_t ret = waitpid(id, nullptr, 0);
+                if (ret > 0)
+                {
+                    cout << "wait success: " << ret << endl;
+                }
             }
         }
 
