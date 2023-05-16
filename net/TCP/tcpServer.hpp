@@ -111,6 +111,8 @@ namespace Server
                 {
                     cout << "wait success: " << ret << endl;
                 }
+                
+                close(sockFd);  // 父进程关闭sockFd，以免出现文件描述符泄漏的问题
             }
         }
 
