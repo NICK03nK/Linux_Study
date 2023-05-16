@@ -10,6 +10,7 @@
 #include <strings.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <pthread.h>
 
 using namespace std;
 
@@ -18,6 +19,18 @@ namespace Server
     enum {USE_ERROR = 1, SOCK_ERROR, BIND_ERROR, LISTEN_ERROR};
 
     static const int backlog = 5;  //?
+    
+    class tcpServer;  // 提前声明tcpServer类，好让ThreadData知道后面是存在这个类的
+    struct ThreadData
+    {
+        tcpServer* _self;  // 指向tcpServer对象，用于解决多线程版本的startRoutine()的传参问题
+        int _sockFd;
+
+        ThreadData(tcpServer* self, int sockFd)
+            :_self(self)
+            , _sockFd(sockFd)
+        {}
+    };
 
     class tcpServer
     {
@@ -84,42 +97,45 @@ namespace Server
                 // --version 1
                 // serviceIO(sockFd);
                 // close(sockFd);  // 执行完serviceIO()后，一定要关闭对应的sockFd，不然会导致文件描述符泄漏
-                // --end of version 1
+                // --the end of version 1
 
                 // --version 2 (多进程版本)
-                pid_t id = fork();  // 创建子进程
+                // pid_t id = fork();  // 创建子进程
 
-                if (id == 0)  // 子进程
-                {
-                    close(_listenSockFd);  // 关闭用来监听的sockfd，避免对其误操作
+                // if (id == 0)  // 子进程
+                // {
+                //     close(_listenSockFd);  // 关闭用来监听的sockfd，避免对其误操作
 
-                    if (fork() > 0)  // 在子进程中再创建子进程
-                    {
-                        // 当前为子进程(非孙子进程)
-                        exit(0);  // 子进程退出了，孙子进程就会变成孤儿进程，由OS领养，当孙子进程退出时，由OS负责回收，即回收任务不需要父进程来关注
-                    }
+                //     if (fork() > 0)  // 在子进程中再创建子进程
+                //     {
+                //         // 当前为子进程(非孙子进程)
+                //         exit(0);  // 子进程退出了，孙子进程就会变成孤儿进程，由OS领养，当孙子进程退出时，由OS负责回收，即回收任务不需要父进程来关注
+                //     }
 
-                    // 孙子进程
-                    serviceIO(sockFd);  // 由孙子进程来提供服务
-                    close(sockFd);
-                    exit(0);
-                }
+                //     // 孙子进程
+                //     serviceIO(sockFd);  // 由孙子进程来提供服务
+                //     close(sockFd);
+                //     exit(0);
+                // }
 
-                // 父进程
-                pid_t ret = waitpid(id, nullptr, 0);
-                if (ret > 0)
-                {
-                    cout << "wait success: " << ret << endl;
-                }
-                
-                close(sockFd);  // 父进程关闭sockFd，以免出现文件描述符泄漏的问题
+                // // 父进程
+                // pid_t ret = waitpid(id, nullptr, 0);  // 阻塞式等待子进程
+                // if (ret > 0)
+                // {
+                //     cout << "wait success: " << ret << endl;
+                // }
+
+                // close(sockFd);  // 父进程关闭sockFd，以免出现文件描述符泄漏的问题
+                // --the end of version 2
+
+                // --version 3 (多线程版本)
+                pthread_t pid;
+                ThreadData* td = new ThreadData(this, sockFd);
+                pthread_create(&pid, nullptr, startRoutine, td);
+                // --the end of version 3
             }
         }
 
-        ~tcpServer()
-        {}
-
-    private:
         void serviceIO(int sockFd)
         {
             char buffer[1024] = { 0 };
@@ -143,6 +159,25 @@ namespace Server
                     break;
                 }
             }
+        }
+
+        ~tcpServer()
+        {}
+
+    private:
+
+        static void* startRoutine(void* arg)
+        {
+            pthread_detach(pthread_self());  // 分离线程，让主线程不用join从线程，从而达到并发的目的
+
+            ThreadData* td = static_cast<ThreadData*>(arg);
+
+            td->_self->serviceIO(td->_sockFd);
+            delete td;  // 释放new出来的td
+
+            close(td->_sockFd);  // 使用完毕后，及时关闭文件描述符，避免文件描述符泄漏
+            
+            return nullptr;
         }
 
     private:

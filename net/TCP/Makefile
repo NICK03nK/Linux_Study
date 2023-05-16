@@ -2,7 +2,7 @@
 all:tcpServer tcpClient
 
 tcpServer:tcpServer.cc
-	g++ -o $@ $^ -std=c++11
+	g++ -o $@ $^ -std=c++11 -l pthread
 
 tcpClient:tcpClient.cc
 	g++ -o $@ $^ -std=c++11
