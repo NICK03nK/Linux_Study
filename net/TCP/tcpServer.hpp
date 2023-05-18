@@ -83,6 +83,7 @@ namespace Server
         {
             // 4.初始化线程池
             _threadPool = new ThreadPool<Task>();  // new出来的线程池要在tcpServer的析构函数中delete掉
+            logMessage(NORMAL, "init thread pool success");
             _threadPool->run();  // 将线程池跑起来
 
             while (true)
@@ -97,7 +98,7 @@ namespace Server
                     logMessage(ERROR, "accept error, next");
                     continue;
                 }
-                logMessage(NORMAL, "accept a new link success");
+                logMessage(NORMAL, "accept a new link success, get a new sockFd: %d", sockFd);
 
                 // 6.未来在进行tcp网络编程通信时，都是对accept()的返回值sockFd进行文件操作
 

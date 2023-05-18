@@ -6,6 +6,9 @@
 #include <queue>
 #include <pthread.h>
 #include <unistd.h>
+
+#include "logMessage.hpp"
+
 using namespace myThread;
 
 static const size_t threadNum = 10;
@@ -53,7 +56,8 @@ public:
             ThreadData<T>* td = new ThreadData<T>(this, t->getThreadName());
 
             t->start(handlerTask, td);
-            cout << t->getThreadName() << "start..." << endl;
+            // cout << t->getThreadName() << "start..." << endl;
+            logMessage(DEBUG, "%s start...", t->getThreadName().c_str());
         }
     }
 
