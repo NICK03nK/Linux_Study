@@ -1,6 +1,5 @@
 #pragma once
 
-#include "logMessage.hpp"
 #include <iostream>
 #include <string>
 #include <sys/types.h>
@@ -11,6 +10,10 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <pthread.h>
+
+#include "logMessage.hpp"
+#include "ThreadPool.hpp"
+#include "Task.hpp"
 
 using namespace std;
 
@@ -78,9 +81,13 @@ namespace Server
 
         void start()
         {
+            // 4.初始化线程池
+            _threadPool = new ThreadPool<Task>();  // new出来的线程池要在tcpServer的析构函数中delete掉
+            _threadPool->run();  // 将线程池跑起来
+
             while (true)
             {
-                // 4.调用accept()，获取新链接
+                // 5.调用accept()，获取新链接
                 struct sockaddr_in client;
                 socklen_t len = sizeof(client);
 
@@ -92,7 +99,7 @@ namespace Server
                 }
                 logMessage(NORMAL, "accept a new link success");
 
-                // 5.未来在进行tcp网络编程通信时，都是对accept()的返回值sockFd进行文件操作
+                // 6.未来在进行tcp网络编程通信时，都是对accept()的返回值sockFd进行文件操作
 
                 // --version 1
                 // serviceIO(sockFd);
@@ -129,59 +136,43 @@ namespace Server
                 // --the end of version 2
 
                 // --version 3 (多线程版本)
-                pthread_t pid;
-                ThreadData* td = new ThreadData(this, sockFd);
-                pthread_create(&pid, nullptr, startRoutine, td);
+                // pthread_t pid;
+                // ThreadData* td = new ThreadData(this, sockFd);
+                // pthread_create(&pid, nullptr, startRoutine, td);
                 // --the end of version 3
-            }
-        }
 
-        void serviceIO(int sockFd)
-        {
-            char buffer[1024] = { 0 };
-            while (true)
-            {
-                ssize_t n = read(sockFd, buffer, sizeof(buffer) - 1);
-                if (n > 0)
-                {
-                    buffer[n] = 0;
-                    cout << "receive message: " << buffer << endl;
-
-                    // 将服务器收到的消息转发回给客户端
-                    string outbuffer = buffer;
-                    outbuffer += "[server]";
-
-                    write(sockFd, outbuffer.c_str(), outbuffer.size());
-                }
-                else if (n == 0)  // read()返回值为0，即client端已退出
-                {
-                    logMessage(NORMAL, "client quit, so do i");
-                    break;
-                }
+                // --version 4 (线程池版本)
+                Task t(sockFd, serviceIO);  // 创建任务
+                _threadPool->push(t);  // 将任务push到线程池中
+                // --the end of version 4
             }
         }
 
         ~tcpServer()
-        {}
+        {
+            delete _threadPool;
+        }
 
     private:
 
-        static void* startRoutine(void* arg)
-        {
-            pthread_detach(pthread_self());  // 分离线程，让主线程不用join从线程，从而达到并发的目的
+        // static void* startRoutine(void* arg)
+        // {
+        //     pthread_detach(pthread_self());  // 分离线程，让主线程不用join从线程，从而达到并发的目的
 
-            ThreadData* td = static_cast<ThreadData*>(arg);
+        //     ThreadData* td = static_cast<ThreadData*>(arg);
 
-            td->_self->serviceIO(td->_sockFd);
-            delete td;  // 释放new出来的td
+        //     td->_self->serviceIO(td->_sockFd);
+        //     close(td->_sockFd);  // 使用完毕后，及时关闭文件描述符，避免文件描述符泄漏
 
-            close(td->_sockFd);  // 使用完毕后，及时关闭文件描述符，避免文件描述符泄漏
+        //     delete td;  // 释放new出来的td
             
-            return nullptr;
-        }
+        //     return nullptr;
+        // }
 
     private:
         uint16_t _port;  // 服务器程序的端口号
         int _listenSockFd;  // 用于监听是否有新链接，作为accpet()的参数
+
+        ThreadPool<Task>* _threadPool;  // 用于处理tcp网络通信的线程池版本
     };
 }
