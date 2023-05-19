@@ -1,4 +1,5 @@
 #include "tcpServer.hpp"
+#include "daemon.hpp"
 #include <memory>
 #include <cstdlib>
 
@@ -22,6 +23,9 @@ int main(int argc, char* argv[])
     unique_ptr<tcpServer> uqSVR(new tcpServer(server_port));
     
     uqSVR->initServer();
+
+    // 在服务器启动前，将服务器守护进程化
+    daemonSelf();
     uqSVR->start();
 
     return 0;

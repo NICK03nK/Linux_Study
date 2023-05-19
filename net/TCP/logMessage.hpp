@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdarg>
 #include <ctime>
+#include <cstdio>
 
 using namespace std;
 
@@ -14,6 +15,9 @@ using namespace std;
 #define FATAL   4
 
 #define NUM 1024
+
+#define LOG_NORMAL "log.txt"
+#define LOG_ERR "log.error"
 
 const char* toLevelStr(int level)
 {
@@ -45,5 +49,17 @@ void logMessage(int level, const char* format, ...)
     va_start(arg, format);
     vsnprintf(logContent, sizeof(logContent), format, arg);
 
-    cout << logPrefix << logContent << endl;    
+    FILE* log = fopen(LOG_NORMAL, "a");
+    FILE* err = fopen(LOG_ERR, "a");
+
+    if(log != nullptr && err != nullptr)
+    {
+        FILE *curr = nullptr;
+        if(level == DEBUG || level == NORMAL || level == WARNING) curr = log;
+        if(level == ERROR || level == FATAL) curr = err;
+        if(curr) fprintf(curr, "%s%s\n", logPrefix, logContent);
+
+        fclose(log);
+        fclose(err);
+    }
 }
