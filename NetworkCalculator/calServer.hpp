@@ -38,6 +38,8 @@ namespace Server
                 return;  // 获取一个完整的报文失败，直接返回
             }
 
+            cout << recvPackage << endl;
+
             string reqMessage = deLength(recvPackage);
 
             // 2.将该有效载荷反序列化处理，得到一个Request对象(结构化数据)

@@ -5,6 +5,7 @@
 #include <cstring>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <jsoncpp/json/json.h>
 
 using namespace std;
 
@@ -56,6 +57,7 @@ public:
 
     bool serialize(string* out)
     {
+#ifdef MYSELF
         *out = "";  // 将out清空
         
         // 将结构化数据序列化为 -> "x op y"
@@ -67,12 +69,21 @@ public:
         *out += _op;
         *out += SEP;
         *out += y_str;
+#else  // 现成的json序列化
+        Json::Value root;
+        root["first"] = _x;
+        root["second"] = _y;
+        root["operation"] = _op;
 
+        Json::FastWriter writer;
+        *out = writer.write(root);
+#endif
         return true;
     }
 
     bool deserialize(const string& in)
     {
+#ifdef MYSELF
         // 将"x op y"反序列化为 -> 结构化数据
         size_t leftSEP = in.find(SEP);
         size_t rightSEP = in.rfind(SEP);
@@ -102,7 +113,15 @@ public:
         _x = stoi(x_str);
         _y = stoi(y_str);
         _op = in[leftSEP + SEP_LEN];
+#else
+        Json::Value root;
+        Json::Reader reader;
+        reader.parse(in, root);
 
+        _x = root["first"].asInt();
+        _y = root["second"].asInt();
+        _op = root["operation"].asInt();
+#endif
         return true;
     }
 
@@ -122,6 +141,7 @@ public:
 
     bool serialize(string* out)
     {
+#ifdef MYSELF
         // 将结构化数据序列化为 -> "exitCode result"
         string ec_str = to_string(_exitCode);
         string res_str = to_string(_result);
@@ -129,12 +149,20 @@ public:
         *out = ec_str;
         *out += SEP;
         *out += res_str;
+#else
+        Json::Value root;
+        root["exitCode"] = _exitCode;
+        root["result"] = _result;
 
+        Json::FastWriter writer;
+        *out = writer.write(root);
+#endif
         return true;
     }
 
     bool deserialize(const string& in)
     {
+#ifdef MYSELF
         // 将"exitCode result"反序列化为 -> 结构化数据
         size_t mid = in.find(SEP);
 
@@ -152,7 +180,14 @@ public:
 
         _exitCode = stoi(ec_str);
         _result = stoi(res_str);
+#else
+        Json::Value root;
+        Json::Reader reader;
+        reader.parse(in, root);
 
+        _exitCode = root["exitCode"].asInt();
+        _result = root["result"].asInt();
+#endif
         return true;
     }
 
