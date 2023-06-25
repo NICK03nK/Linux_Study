@@ -22,7 +22,7 @@ namespace Server
 
     static const int backlog = 5;  //?
 
-    using func_t = function<bool (const httpRequest&, const httpResponse&)>;
+    using func_t = function<bool (const httpRequest&, httpResponse&)>;
 
     class httpServer
     {
@@ -80,6 +80,8 @@ namespace Server
             {
                 buffer[n] = 0;
                 req.inbuffer = buffer;
+                req.parse();
+
                 _func(req, resp);  // 将请求转换成响应
                 send(sockFd, resp.outbuffer.c_str(), resp.outbuffer.size(), 0);
             }
