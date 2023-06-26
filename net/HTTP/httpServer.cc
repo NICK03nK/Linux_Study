@@ -46,12 +46,12 @@ bool Get(const httpRequest& req, httpResponse& resp)
     string respLine = "HTTP/1.1 200 OK\r\n";
     string respHeader = suffixToDesc(req.suffix);
 
-    if (req.size > 0)
-    {
-        respHeader += "Content-Length: ";
-        respHeader += to_string(req.size);
-        respHeader += "\r\n";
-    }
+    // if (req.size > 0)
+    // {
+    //     respHeader += "Content-Length: ";
+    //     respHeader += to_string(req.size);
+    //     respHeader += "\r\n";
+    // }
 
     string respBlank = "\r\n";
 
