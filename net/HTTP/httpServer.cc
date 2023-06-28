@@ -53,6 +53,8 @@ bool Get(const httpRequest& req, httpResponse& resp)
     //     respHeader += "\r\n";
     // }
 
+    respHeader += "Set-Cookie: 18124665842@\r\n";
+
     string respBlank = "\r\n";
 
     string body;
