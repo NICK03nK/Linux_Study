@@ -11,6 +11,11 @@ void Usage(std::string proc)
     std::cerr << "Usage:\n\t" << proc << " port\n\n";
 }
 
+std::string transaction(const std::string& request)
+{
+    return request;
+}
+
 int main(int argc, char* argv[])
 {
     if (argc != 2)
@@ -19,7 +24,7 @@ int main(int argc, char* argv[])
         exit(USE_ERROR);
     }
 
-    unique_ptr<selectServer> uqSVR(new selectServer(atoi(argv[1])));
+    unique_ptr<selectServer> uqSVR(new selectServer(transaction, atoi(argv[1])));
 
     uqSVR->initServer();
     uqSVR->start();
