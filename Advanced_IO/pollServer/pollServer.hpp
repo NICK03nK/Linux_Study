@@ -118,7 +118,7 @@ namespace Server
             }
             else  // recv()出错
             {
-                logMessage(ERROR, "client quit: %s", strerror(errno));
+                logMessage(ERROR, "recv() error: %s", strerror(errno));
 
                 ResetItem(pos);
 
