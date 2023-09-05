@@ -13,18 +13,18 @@
 #include "err.hpp"
 
 static const int backlog = 32;
-static const int defaultValue = -1;
+static const int defaultSockFd = -1;
 
 class Sock
 {
 public:
     Sock()
-        :_listenSockFd(defaultValue)
+        :_listenSockFd(defaultSockFd)
     {}
 
     ~Sock()
     {
-        if (_listenSockFd != defaultValue)
+        if (_listenSockFd != defaultSockFd)
         {
             close(_listenSockFd);
         }
@@ -35,7 +35,7 @@ public:
     {
         // 1.创建tcp套接字
         _listenSockFd = socket(AF_INET, SOCK_STREAM, 0);
-        if (_listenSockFd == defaultValue)
+        if (_listenSockFd == defaultSockFd)
         {
             logMessage(FATAL, "create socket error");
             exit(SOCK_ERROR);
@@ -77,20 +77,22 @@ public:
         logMessage(NORMAL, "socket listen success");
     }
     
-    int Accept(std::string* client_ip, uint16_t* client_port)
+    int Accept(std::string* client_ip, uint16_t* client_port, int* err)
     {
         // 4.调用accept()，获取新链接
         struct sockaddr_in client;
         socklen_t len = sizeof(client);
 
         int sockFd = accept(_listenSockFd, (struct sockaddr *)&client, &len);
+        *err = errno;
+
         if (sockFd == -1)
         {
-            logMessage(ERROR, "accept error, next");
+            // logMessage(ERROR, "accept error, next");
         }
         else
         {
-            logMessage(NORMAL, "accept a new link success, get a new sockFd: %d", sockFd);
+            // logMessage(NORMAL, "accept a new link success, get a new sockFd: %d", sockFd);
 
             *client_ip = inet_ntoa(client.sin_addr);
             *client_port = ntohs(client.sin_port);
@@ -102,6 +104,14 @@ public:
     int Fd()
     {
         return _listenSockFd;
+    }
+
+    void Close()
+    {
+        if (_listenSockFd != defaultSockFd)
+        {
+            close(_listenSockFd);
+        }
     }
 
 private:

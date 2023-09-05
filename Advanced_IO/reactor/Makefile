@@ -1,5 +1,5 @@
 tcpServer:main.cc
-	g++ -o $@ $^ -std=c++11
+	g++ -o $@ $^ -std=c++11 -ljsoncpp
 
 .PHONY:clean
 clean:

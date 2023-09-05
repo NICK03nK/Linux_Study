@@ -5,23 +5,24 @@
 #include <unistd.h>
 #include <string>
 #include <cstring>
-#include "log.hpp"
-#include "err.h"
 
-static const int defaultValue = -1;
+#include "log.hpp"
+#include "err.hpp"
+
+static const int defaultEpFd = -1;
 static const int size = 128;
 
 class Epoller
 {
 public:
     Epoller()
-        : _epfd(defaultValue)
+        : _epfd(defaultEpFd)
     {
     }
 
     ~Epoller()
     {
-        if (_epfd != defaultValue)
+        if (_epfd != defaultEpFd)
         {
             close(_epfd);
         }
@@ -55,6 +56,36 @@ public:
     {
         int ret = epoll_wait(_epfd, revs, num, timeout);
         return ret;
+    }
+
+    void Close()
+    {
+        if (_epfd != defaultEpFd)
+        {
+            close(_epfd);
+        }
+    }
+
+    bool Control(int sockFd, uint32_t event, int action)
+    {
+        int n = 0;
+        if (action == EPOLL_CTL_MOD)
+        {
+            struct epoll_event ev;
+            ev.events = event;
+            ev.data.fd = sockFd;
+            n = epoll_ctl(_epfd, action, sockFd, &ev); // 修改关心的事件
+        }
+        else if (action == EPOLL_CTL_DEL)
+        {
+            n = epoll_ctl(_epfd, action, sockFd, nullptr); // 删除关系的事件
+        }
+        else
+        {
+            return -1;
+        }
+
+        return n == 0;
     }
 
 private:
